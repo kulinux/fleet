@@ -6,14 +6,19 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.launch
 
 class AppTest : ShouldSpec({
-    val fleet = Fleet(mapOf(Size.L to 1, Size.M to 1))
-    val waiter = Waiter()
-    val randomSize = RandomSize()
-    val goods = Goods(waiter, randomSize)
-    val trucks = Trucks(fleet, waiter)
+    lateinit var fleet: Fleet
+    lateinit var goods: Goods
+    lateinit var trucks: Trucks
+
+    beforeAny {
+        fleet = Fleet.apply(mapOf(Size.L to 1, Size.M to 1))
+        val waiter = Waiter()
+        val randomSize = RandomSize()
+        goods = Goods(waiter, randomSize)
+        trucks = Trucks(fleet, waiter)
+    }
 
     should("consume 1 items") {
-        fleet.init()
         repeat(10) {
             val good = goods.next()
             val truck: Truck = trucks.consume(good)
@@ -24,7 +29,6 @@ class AppTest : ShouldSpec({
 
     should("consume 1 items several threads") {
         runBlocking {
-            fleet.init()
             repeat(10) {
                 launch {
                     val good = goods.next()

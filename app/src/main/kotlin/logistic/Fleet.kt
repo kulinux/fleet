@@ -2,14 +2,16 @@ package logistic
 
 import kotlinx.coroutines.channels.Channel
 
-class Fleet(private val initial: Map<Size, Int>) {
+class Fleet private constructor(private val initial: Map<Size, Int>) {
     private lateinit var channel: Map<Size, Channel<Size>>
 
-    suspend fun init() {
-        channel = Size.entries.associateWith { Channel<Size>(capacity = Channel.UNLIMITED) }
+    private suspend fun init() {
+        channel = Size.entries.associateWith { Channel(capacity = Channel.UNLIMITED) }
+
         println("start init")
-        repeat(initial.getOrDefault(Size.L, 0)) { channel[Size.L]?.send(Size.L) }
-        repeat(initial.getOrDefault(Size.M, 0)) { channel[Size.M]?.send(Size.M) }
+        Size.entries.forEach { size: Size ->
+            repeat(initial.getOrDefault(size, 0)) { channel[size]?.send(size) }
+        }
         println("end init")
     }
 
@@ -21,5 +23,9 @@ class Fleet(private val initial: Map<Size, Int>) {
 
     suspend fun end(size: Size) {
         channel[size]?.send(size)
+    }
+
+    companion object {
+        suspend fun apply(initial: Map<Size, Int>): Fleet = Fleet(initial).also { it.init() }
     }
 }
