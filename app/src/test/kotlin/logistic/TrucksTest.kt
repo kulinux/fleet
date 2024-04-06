@@ -1,6 +1,7 @@
 package logistic
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
@@ -14,7 +15,6 @@ class TrucksTest : ShouldSpec({
     val good = Good(size)
 
     should("call waiter on trucks consume") {
-        every { fleet.start(size) } returns true
         trucks.consume(good)
         coVerifyOrder {
             fleet.start(size)
@@ -23,13 +23,5 @@ class TrucksTest : ShouldSpec({
         }
     }
 
-    should("raise an error if does not have track") {
-        every { fleet.start(size) } returns false
-        assertThrows<RuntimeException> {
-            trucks.consume(good)
-        }
 
-
-
-    }
 })

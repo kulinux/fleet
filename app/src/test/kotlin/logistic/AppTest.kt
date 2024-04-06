@@ -1,24 +1,38 @@
 package logistic
 
+import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.every
-import io.mockk.mockk
+import kotlinx.coroutines.launch
 
 class AppTest : ShouldSpec({
+    val fleet = Fleet(mapOf(Size.L to 1, Size.M to 1))
+    val waiter = Waiter()
+    val randomSize = RandomSize()
+    val goods = Goods(waiter, randomSize)
+    val trucks = Trucks(fleet, waiter)
+
     should("consume 1 items") {
-        val size = Size.L
-        val fleet = Fleet(mapOf(Size.L to 3, Size.M to 3))
-        val waiter = mockk<Waiter>(relaxed = true)
-        val randomSize = mockk<RandomSize>(relaxed = true)
-        every { randomSize.size() } returns size
-        val goods = Goods(waiter, randomSize)
-        val trucks = Trucks(fleet, waiter)
+        fleet.init()
         repeat(10) {
             val good = goods.next()
             val truck: Truck = trucks.consume(good)
 
             truck.size shouldBe good.size
+        }
+    }
+
+    should("consume 1 items several threads") {
+        runBlocking {
+            fleet.init()
+            repeat(10) {
+                launch {
+                    val good = goods.next()
+                    val truck: Truck = trucks.consume(good)
+
+                    truck.size shouldBe good.size
+                }
+            }
         }
     }
 

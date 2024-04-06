@@ -1,25 +1,25 @@
 package logistic
 
-class Fleet(initial: Map<Size, Int>) {
-    private var fleet = initial.toMap()
+import kotlinx.coroutines.channels.Channel
 
-    fun start(size: Size): Boolean {
-        val res = fleet.getOrDefault(size, 0) > 0
-        fleet = fleet.map { (key, value) ->
-            when (key) {
-                size -> key to value - 1
-                else -> key to value
-            }
-        }.toMap()
-        return res
+class Fleet(private val initial: Map<Size, Int>) {
+    private lateinit var channel: Map<Size, Channel<Size>>
+
+    suspend fun init() {
+        channel = Size.entries.associateWith { Channel<Size>(capacity = Channel.UNLIMITED) }
+        println("start init")
+        repeat(initial.getOrDefault(Size.L, 0)) { channel[Size.L]?.send(Size.L) }
+        repeat(initial.getOrDefault(Size.M, 0)) { channel[Size.M]?.send(Size.M) }
+        println("end init")
     }
 
-    fun end(size: Size) {
-        fleet = fleet.map { (key, value) ->
-            when (key) {
-                size -> key to value + 1
-                else -> key to value
-            }
-        }.toMap()
+    suspend fun start(size: Size) {
+        println("${Thread.currentThread().name} waiting for $size")
+        val trySize = channel[size]?.receive()
+        println("${Thread.currentThread().name} waiting for $size ends $trySize")
+    }
+
+    suspend fun end(size: Size) {
+        channel[size]?.send(size)
     }
 }
